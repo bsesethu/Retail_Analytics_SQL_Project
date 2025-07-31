@@ -31,3 +31,39 @@ FROM (
 	)c
 GROUP BY category
 ORDER BY sum_revenue DESC
+
+-- Customer Insights
+	-- Who are the top 10 customers by lifetime value?
+SELECT 
+	TOP 10
+	c.customer_id,
+	c.name,
+	c.email,
+	--o.order_id,
+	--o.total_amount,
+	SUM(CAST(REPLACE(total_amount, '$', '') as DECIMAL(10, 2))) sum_total
+FROM CUSTOMERS c
+INNER JOIN ORDERS o -- INNER JOIN because we only want the data where both tables intersect, nothing more
+ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.name, c.email
+ORDER BY sum_total DESC
+
+	--What percentage of customers made more than one order?
+SELECT * FROM CUSTOMERS c INNER JOIN ORDERS o ON c.customer_id = o.customer_id
+
+SELECT count_1plus / 200.0 * 100 percnt_of_cust_more_than_one_order
+FROM (
+	SELECT
+		COUNT(*) count_1plus -- No. of rows with more than 1 order per customer
+		FROM (
+		SELECT 
+			c.customer_id,
+			COUNT(DISTINCT o.order_id) count_id
+		FROM CUSTOMERS c
+		INNER JOIN ORDERS o
+		ON c.customer_id = o.customer_id
+		GROUP BY c.customer_id
+		)t
+	WHERE count_id > 1
+	)s
+
