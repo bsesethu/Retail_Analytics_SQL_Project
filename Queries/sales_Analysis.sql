@@ -114,7 +114,7 @@ ORDER BY sum_revenue
 -- poor sum_revenue is values below 1000
 -- high stock is values above 1300
 -- These are bad selling products with a high stock count
--- These results are the ones that best meet the criteria
+-- These results are the ones that best meet the crit
 -------------------------------------------------------------------------------------------------------------------
 
 -- Operational & Data Quality
@@ -152,3 +152,42 @@ FROM CUSTOMERS
 GROUP BY email
 HAVING COUNT(email) > 1
 	-- Empty table result, hence no duplicate emails.
+----------------------------------------------------------------------------------------------------------------------------
+
+-- Custom metric 
+	-- Find Nigerian citizens, determine what products they purchased and how much it cost, by most to least expensive
+--CREATE VIEW NIGERIAN_INFO
+--AS
+SELECT 
+	customer_id,
+	customer_name,
+	country,
+	order_id,
+	product_id,
+	product_name,
+	category,
+	SUM(CAST(REPLACE(total_amount, '$', '') as FLOAT)) total_amount_num
+FROM (
+	SELECT 
+		c.customer_id,
+		c.name customer_name,
+		c.country,
+		o.order_id,
+		o.total_amount,
+		p.product_id,
+		p.name product_name,
+		p.category
+	FROM CUSTOMERS c
+	INNER JOIN ORDERS o
+	ON c.customer_id = o.customer_id
+	INNER JOIN ORDER_ITEMS oi
+	ON oi.order_id = o.order_id
+	INNER JOIN PRODUCTS p
+	ON p.product_id = oi.product_id
+	WHERE country = 'Nigeria'
+	)a
+GROUP BY customer_id, customer_name, country, order_id, total_amount, product_id, product_name, category
+-- ORDER BY total_amount_num DESC -- Can't have ORDER BY for a view
+
+SELECT * FROM NIGERIAN_INFO -- Query the VIEW
+----------------------------------------------------------------------------------------------------------------------
