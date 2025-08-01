@@ -19,7 +19,7 @@ GROUP BY order_month, order_month_num, order_year
 ORDER BY order_month_num 
 
 	-- Which product categories generate the most revenue?
-SELECT 
+SELECT TOP 10
 	category,
 	SUM(revenue) sum_revenue
 FROM (
@@ -40,8 +40,6 @@ SELECT
 	c.customer_id,
 	c.name,
 	c.email,
-	--o.order_id,
-	--o.total_amount,
 	SUM(CAST(REPLACE(total_amount, '$', '') as DECIMAL(10, 2))) sum_total
 FROM CUSTOMERS c
 INNER JOIN ORDERS o -- INNER JOIN because we only want the data where both tables intersect, nothing more
@@ -70,9 +68,6 @@ FROM (
 
 -- Product Performance
 	--What are the top 5 best-selling products per category?
--- SELECT * FROM PRODUCTS p INNER JOIN ORDER_ITEMS oi ON p.product_id = oi.product_id
--- SELECT * FROM ORDER_ITEMS
-
 SELECT TOP 5
 	product_id,
 	name,
@@ -119,11 +114,41 @@ ORDER BY sum_revenue
 -- poor sum_revenue is values below 1000
 -- high stock is values above 1300
 -- These are bad selling products with a high stock count
+-- These results are the ones that best meet the criteria
 -------------------------------------------------------------------------------------------------------------------
 
 -- Operational & Data Quality
 	-- Are there any orders where total_amount doesn’t match the sum of items?
-
-	
+	-- The better question is; Are there any orders where total_amount does match the sum of items?
+	-- Also I don't know what sum of items is, I'm assuming it's the product of quantity_sold and price in ORDER_ITEMS table
+SELECT 
+	order_id,
+	customer_id,
+	order_item_id,
+	product_id,
+	total_amount_order, 
+	quantity_sold_int * price_float total_amount_oi
+FROM (
+	SELECT 
+		o.order_id,
+		o.customer_id,
+		oi.order_item_id,
+		oi.product_id,
+		CAST(REPLACE(o.total_amount, '$', '') as FLOAT) total_amount_order, -- Convert to float
+		CAST(oi.quantity as INT) quantity_sold_int,
+		CAST(REPLACE(oi.price, '$', '') as FLOAT) price_float
+	FROM ORDERS o
+	INNER JOIN ORDER_ITEMS oi
+	ON o.order_id = oi.order_id
+	)r
+WHERE total_amount_order = quantity_sold_int * price_float
+	-- No, there are no orders where total_amount match the total amount in ORDER_ITEMS.
 	
 	--Identify duplicate emails in the customer table.
+SELECT 
+	email,
+	COUNT(email) count_email
+FROM CUSTOMERS
+GROUP BY email
+HAVING COUNT(email) > 1
+	-- Empty table result, hence no duplicate emails.
